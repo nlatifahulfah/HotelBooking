@@ -1,0 +1,119 @@
+<data name="HotelDataService" transports="http https local">
+   <config enableOData="false" id="Datasource">
+      <property name="driverClassName">com.mysql.jdbc.Driver</property>
+      <property name="url">jdbc:mysql://localhost:3306/hoteldb</property>
+      <property name="username">root</property>
+      <property name="password">root</property>
+   </config>
+   <query id="getAllRoomTypeAvailable" useConfig="Datasource">
+      <sql>SELECT room.id, room.type from room&#xd;where room.id NOT IN(&#xd;SELECT room_id&#xd;FROM availability&#xd;WHERE NOT (check_in &gt; :checkout OR check_out &lt; :checkin)&#xd;);</sql>
+      <result element="Entries" rowName="Entry">
+         <element column="id" name="id" xsdType="integer"/>
+         <element column="type" name="type" xsdType="string"/>
+      </result>
+      <param name="checkout" optional="false" sqlType="TIMESTAMP"/>
+      <param name="checkin" optional="false" sqlType="TIMESTAMP"/>
+   </query>
+   <query id="getRoomTypeAvailable" useConfig="Datasource">
+      <sql>SELECT room.id, room.type from room&#xd;where type=:type&#xd;&#xd;AND room.id NOT IN(&#xd;SELECT room_id&#xd;FROM availability&#xd;WHERE NOT (DATE(check_in) &gt;= :checkout OR DATE(check_out) &lt;= :checkin)&#xd;);</sql>
+      <result element="Entries" rowName="Entry">
+         <element column="id" name="id" xsdType="integer"/>
+         <element column="type" name="type" xsdType="string"/>
+      </result>
+      <param name="type" sqlType="STRING"/>
+      <param name="checkout" optional="false" sqlType="TIMESTAMP"/>
+      <param name="checkin" optional="false" sqlType="TIMESTAMP"/>
+   </query>
+   <query id="addRoom" useConfig="Datasource">
+      <sql>INSERT INTO Room (type)&#xd;VALUES (:type);</sql>
+      <param name="type" sqlType="STRING"/>
+   </query>
+   <query id="addAvailability" useConfig="Datasource">
+      <sql>INSERT INTO Availability (room_id, check_in, check_out)&#xd;VALUES (:room_id, :check_in, :check_out)</sql>
+      <param name="room_id" sqlType="STRING"/>
+      <param name="check_in" optional="false" sqlType="TIMESTAMP"/>
+      <param name="check_out" optional="false" sqlType="TIMESTAMP"/>
+   </query>
+   <query id="getRoom" useConfig="Datasource">
+      <sql>SELECT id, type FROM room</sql>
+      <result element="Entries" rowName="Entry">
+         <element column="id" name="id" xsdType="integer"/>
+         <element column="type" name="type" xsdType="string"/>
+      </result>
+   </query>
+   <query id="getAvailability" useConfig="Datasource">
+      <sql>SELECT id, room_id, check_in, check_out FROM availability</sql>
+      <result element="Entries" rowName="Entry">
+         <element column="id" name="id" xsdType="integer"/>
+         <element column="room_id" name="room_id" xsdType="integer"/>
+         <element column="check_in" name="check_in" xsdType="dateTime"/>
+         <element column="check_out" name="check_out" xsdType="dateTime"/>
+      </result>
+   </query>
+   <operation name="getAllRoomTypeAvailable">
+      <description>mengembalikan semua ruangan yang tersedia berdasarkan waktu checkin dan checkout user                                    &#xd;                                    </description>
+      <call-query href="getAllRoomTypeAvailable">
+         <with-param name="checkout" query-param="checkout"/>
+         <with-param name="checkin" query-param="checkin"/>
+      </call-query>
+   </operation>
+   <operation name="getRoomTypeAvailable">
+      <description>mengembalikan kamar yang tersedia berdasarkan tipe kamar dan waktu checkin dan checkout user</description>
+      <call-query href="getRoomTypeAvailable">
+         <with-param name="type" query-param="type"/>
+         <with-param name="checkout" query-param="checkout"/>
+         <with-param name="checkin" query-param="checkin"/>
+      </call-query>
+   </operation>
+   <operation name="getRoom">
+      <description>mendapatkan semua data kamar hotel&#xd;                                    </description>
+      <call-query href="getRoom"/>
+   </operation>
+   <operation name="getAvailability">
+      <description>mendapatkan semua availability&#xd;                                    </description>
+      <call-query href="getAvailability"/>
+   </operation>
+   <operation name="addRoom">
+      <description>menambahkan kamar baru</description>
+      <call-query href="addRoom">
+         <with-param name="type" query-param="type"/>
+      </call-query>
+   </operation>
+   <operation name="addAvailability">
+      <description>menambahkan availability&#xd;                                    </description>
+      <call-query href="addAvailability">
+         <with-param name="room_id" query-param="room_id"/>
+         <with-param name="check_in" query-param="check_in"/>
+         <with-param name="check_out" query-param="check_out"/>
+      </call-query>
+   </operation>
+   <resource method="GET" path="Room/{type}/{checkin}/{checkout}">
+      <description>mendapatkan kamar berdasarkan input tipe kamar dan waktu checkin checkout&#xd;                                    </description>
+      <call-query href="getRoomTypeAvailable">
+         <with-param name="type" query-param="type"/>
+         <with-param name="checkout" query-param="checkout"/>
+         <with-param name="checkin" query-param="checkin"/>
+      </call-query>
+   </resource>
+   <resource method="GET" path="Room/{checkin}/{checkout}">
+      <description>mendapatkan kamar berdasarkan input waktu checkin checkout                    &#xd;                                    </description>
+      <call-query href="getAllRoomTypeAvailable">
+         <with-param name="checkout" query-param="checkout"/>
+         <with-param name="checkin" query-param="checkin"/>
+      </call-query>
+   </resource>
+   <resource method="GET" path="Rooms">
+      <description>mendapatkan semua kamar hotel&#xd;                                    </description>
+      <call-query href="getRoom"/>
+   </resource>
+   <resource method="GET" path="Availabilities">
+      <description>mendapatkan semua availability&#xd;                                    </description>
+      <call-query href="getAvailability"/>
+   </resource>
+   <resource method="POST" path="Room/add/{type}">
+      <description>menambahkan kamar baru&#xd;                                    </description>
+      <call-query href="addRoom">
+         <with-param name="type" query-param="type"/>
+      </call-query>
+   </resource>
+</data>
